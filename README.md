@@ -136,22 +136,11 @@ For full license text: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc
 
 If you use this code or model, please cite:
 
-```bibtex
-@misc{shadman2025palnet,
-  title   = {PAL-Net: A Point-Wise CNN with Patch-Attention for 3D Facial Landmark Localization},
-  author  = {Ali Shadman Yazdi and Annalisa Cappella and Benedetta Baldini and Riccardo Solazzo and Gianluca Tartaglia and Chiarella Sforza and Giuseppe Baselli},
-  year    = {2025},
-  eprint  = {2510.00910},
-  archivePrefix = {arXiv},
-  primaryClass = {eess.IV},
-  doi     = {10.48550/arXiv.2510.00910}
-}
-```
+
 
 ---
 
-For questions or collaborations: contact [Ali Shadman](https://www.linkedin.com/in/alishadman/) or open an issue.
+For questions or collaborations: contact [Ali Shadman]([https://www.linkedin.com/in/alishadman/](https://www.linkedin.com/in/ali-shadman-006a871b1/)) or open an issue.
 
 ---
 
-🧠 Built with ❤️ for cranio-maxillofacial AI research
