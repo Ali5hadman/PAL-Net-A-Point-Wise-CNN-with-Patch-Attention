@@ -140,7 +140,7 @@ If you use this code or model, please cite:
 
 ---
 
-For questions or collaborations: contact [Ali Shadman]([https://www.linkedin.com/in/ali-shadman-006a871b1/]) or open an issue.
+For questions or collaborations: contact [Ali Shadman](https://www.linkedin.com/in/ali-shadman-006a871b1/) or open an issue.
 
 ---
 
