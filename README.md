@@ -117,7 +117,7 @@ The evaluation section (bottom of `run.py`) includes:
 
 - ⚠️ If you get CUDA OOM errors, reduce `batch_size` or `patch_size`
 - ✅ If you get very high errors, check if your landmarks are misaligned with your mesh
-- 📌 For custom data: ensure landmark count = 50 and proper scaling
+- 📌 For custom data: ensure landmark count and proper scaling
 
 ---
 
