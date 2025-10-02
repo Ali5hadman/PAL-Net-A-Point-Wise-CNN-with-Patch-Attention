@@ -14,225 +14,144 @@ arXiv:2510.00910 — https://arxiv.org/abs/2510.00910
 
 ## ✨ Overview
 
-This repository provides the training & evaluation pipeline for **PAL-Net**, a lightweight point-wise CNN with patch-attention for automatic localization of anatomical facial landmarks on **3D facial scans**.
+This repository provides the full pipeline for training and evaluating **PAL-Net**, a point-wise CNN with patch-attention for localizing anatomical landmarks on **3D facial scans**.
 
-- `run.py` — pipeline for **LA-FAS–style** data using `LafasDataset`
-- `run_facescape.py` — pipeline for **FaceScape (neutral)** using `FaceScapeNeutralDataset`
-- `src/` — datasets, patch builders, models (PAL-Net + ablations), losses, utilities
+- `run.py`: main script for training/evaluation on LA-FAS-style datasets
+- `run_facescape.py`: adapted version for FaceScape (neutral-only)
+- `src/`: dataset loaders, patch extraction, models, loss functions, utils
 
-You can run the scripts **as-is** by pointing them to your data, or plug in a **custom dataset dataloader** and give its path to `run.py`.
+You can plug in a **custom dataset loader** (e.g. your own `.npz` format) and modify `run.py` to use it.
 
 ---
 
 ## 📦 Installation
 
-**Requirements**
-
+**Requirements:**
 - Python 3.9–3.11
 - PyTorch (CUDA recommended)
 - NumPy, Pandas, scikit-learn, tqdm, Matplotlib
 
-**Setup (example)**
-
 ```bash
-# (optional) create a virtual environment
 python -m venv .venv
-# Linux/macOS
-source .venv/bin/activate
-# Windows
-# .venv\Scripts\activate
+source .venv/bin/activate  # or .venv\Scripts\activate (Windows)
 
-# install a torch build that matches your CUDA (or cpu wheels)
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-pip install numpy pandas scikit-learn tqdm matplotlib
+pip install numpy pandas scikit-learn tqdm matplotlib trimesh
 ```
 
 ---
 
-## 📂 Datasets
+## 📂 Dataset Format
 
-### LA-FAS (for `run.py`)
-
-`run.py` expects an LA-FAS–style dataset via `LafasDataset`. Edit the **paths** inside `run.py` by setting `root_dirs=[...]` (e.g., `"dataset"`, `"validation_set"`), or mirror the same folder names on your machine.
-
-**Example layout**
+The model expects **point cloud meshes + 3D landmark coordinates** in the LA-FAS format:
 
 ```
 dataset/
-└─ <subject_id>/
-   ├─ mesh.(npz|ply|xyz|...)      # input points / mesh vertices
-   └─ landmarks.(npz|txt|npy)     # L x 3 landmark coordinates
-validation_set/
-└─ ...
+└── S001/
+    ├── mesh.obj
+    ├── transformation_matrix.npy   # 4x4 matrix (optional)
+    └── landmarks.txt                # 50 rows of 3D landmarks
 ```
 
-During the run, the script may:
-- filter outliers with `ThresholdSampler`
-- compute a mean landmark template on the train split
-- create patch caches (e.g., `patch_cache_train/`, `patch_cache_test/`)
+- Mesh is loaded with `trimesh`, and transformed using the `transformation_matrix.npy`
+- Landmarks are read from `.txt`, parsed and transformed to match the mesh
+- 100,000 surface points are sampled for training
 
-### FaceScape (neutral subset, for `run_facescape.py`)
-
-`run_facescape.py` uses `FaceScapeNeutralDataset` and requires:
-- one or more FaceScape root directories
-- `landmark_indices.npz` (landmark indexing file)
-
-**Example layout**
-
-```
-/data/facial_landmarks/FACESCAPE/
-├─ <subject_1>/
-├─ <subject_2>/
-└─ landmark_indices.npz
-```
-
-You can either:
-- edit those paths once at the top of `run_facescape.py`, or
-- mirror the paths on your system via symlink/mount so no code changes are needed.
+You can also use the `FaceScapeNeutralDataset` loader (see `run_facescape.py`).
 
 ---
 
-## ▶️ How to Run
+## 🔁 Custom Datasets
 
-### 1) LA-FAS pipeline (`run.py`)
+You can create your own dataset class as long as it returns a tuple of:
+```python
+(points100k: torch.Tensor, landmarks50: torch.Tensor, optional_raw_vertices: torch.Tensor or None)
+```
+
+To use your own dataset, modify `run.py`:
+```python
+from src.datasets.custom_dataset import MyCustomDataset
+...
+dataset = MyCustomDataset("/path/to/my/data")
+```
+
+---
+
+## 🚀 Running the Code
+
+### Preprocess & Train
 
 ```bash
 python run.py
 ```
 
-**Outputs**
+Edit `run.py` to set:
+- Dataset paths
+- Patch size (default = 1000)
+- Caching directory
+- Network variant (`PALNET`, `PLNET_noatt`, etc.)
 
-- `best_model_ref.pth` — best checkpoint  
-- `results_.csv` — appended metrics per run  
-- NPY error arrays:
-  - `point_wise_closes.npy`, `point_wise_average.npy`
-  - `distance_wise_closes.npy`, `distance_wise_average.npy`
-- temporary caches: `patch_cache_train/`, `patch_cache_test/` (deleted at the end)
+Training uses:
+- `CombinedLoss` (localization + distance)
+- Patch-based batching via `PatchDataset`
+- Early stopping and model checkpointing
 
-### 2) FaceScape (neutral) pipeline (`run_facescape.py`)
+### Evaluate
 
-```bash
-python run_facescape.py
-```
-
-**Outputs** mirror those of `run.py`, with FaceScape-specific cache folders (e.g., `facescape_cache(processed)_npz/`).
-
----
-
-## 🧩 Custom Dataset Dataloader
-
-You can implement your **own** dataset and **use it in `run.py`** (e.g., place your class in `src/datasets/custom_dataset.py` and import it inside `run.py`). The training code expects your dataset to return:
-
-```python
-(points:   torch.Tensor[N, 3],  # input point cloud / vertices
- landmarks: torch.Tensor[L, 3],  # target landmark coordinates
- extras:    Any)                 # optional (e.g., ids, masks)
-```
-
-**Minimal example** (`src/datasets/custom_dataset.py`)
-
-```python
-import os, numpy as np, torch
-from torch.utils.data import Dataset
-
-class MyCustomDataset(Dataset):
-    def __init__(self, root_dirs, cache_dir="custom_cache_npz"):
-        self.root_dirs = root_dirs if isinstance(root_dirs, (list, tuple)) else [root_dirs]
-        self.samples = self._index_files(self.root_dirs)
-        os.makedirs(cache_dir, exist_ok=True)
-        self.cache_dir = cache_dir
-
-    def _index_files(self, roots):
-        pairs = []
-        for r in roots:
-            # discover and return list of (points_path, landmarks_path)
-            pass
-        return pairs
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, idx):
-        pts_path, lmk_path = self.samples[idx]
-        points = torch.from_numpy(np.load(pts_path)["points"]).float()
-        landmarks = torch.from_numpy(np.load(lmk_path)["landmarks"]).float()
-        return points, landmarks, None
-```
+The evaluation section (bottom of `run.py`) includes:
+- Landmark prediction
+- Point-wise and distance-based errors
+- Result CSV saving
 
 ---
 
-## 🔁 Reproducibility
+## 📊 Reproducibility
 
-Both pipelines enforce deterministic settings:
-
-```python
-set_seed(12345)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-```
+- Set seeds via `set_seed()`
+- All patches are cached deterministically
+- Dataloader shuffling can be disabled for testing
 
 ---
 
-## 🧰 Troubleshooting
+## 🧪 Troubleshooting
 
-- **CUDA not found / mismatched build** → install a PyTorch wheel that matches your CUDA driver, or use CPU wheels.  
-- **Out of Memory** → lower `batch_size` or `patch_size` in the scripts.  
-- **File not found** → verify `root_dirs` and any `landmark_indices.npz`. Ensure symlinks/mounts are visible to Python.  
-- **Slow first epoch** → patch caching can take time on the very first run; subsequent runs are faster.
+- ⚠️ If you get CUDA OOM errors, reduce `batch_size` or `patch_size`
+- ✅ If you get very high errors, check if your landmarks are misaligned with your mesh
+- 📌 For custom data: ensure landmark count = 50 and proper scaling
+
+---
+
+## 📄 License
+
+This repository is licensed under a **Creative Commons Attribution-NonCommercial 4.0 International License**.
+
+- ✅ Free to use, modify, and build upon for **non-commercial** purposes
+- ❌ Not for commercial use or redistribution without explicit permission
+
+For full license text: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ---
 
 ## 📚 Citation
 
-If you use this repository, please cite:
-
-> Ali Shadman Yazdi, Annalisa Cappella, Benedetta Baldini, Riccardo Solazzo, Gianluca Tartaglia, Chiarella Sforza, Giuseppe Baselli.  
-> “PAL-Net: A Point-Wise CNN with Patch-Attention for 3D Facial Landmark Localization.” arXiv:2510.00910, 2025. https://arxiv.org/abs/2510.00910
+If you use this code or model, please cite:
 
 ```bibtex
-@article{shadman2025palnet,
+@misc{shadman2025palnet,
   title   = {PAL-Net: A Point-Wise CNN with Patch-Attention for 3D Facial Landmark Localization},
-  author  = {Shadman Yazdi, Ali and Cappella, Annalisa and Baldini, Benedetta and Solazzo, Riccardo and Tartaglia, Gianluca and Sforza, Chiarella and Baselli, Giuseppe},
-  journal = {arXiv preprint arXiv:2510.00910},
+  author  = {Ali Shadman Yazdi and Annalisa Cappella and Benedetta Baldini and Riccardo Solazzo and Gianluca Tartaglia and Chiarella Sforza and Giuseppe Baselli},
   year    = {2025},
-  doi     = {10.48550/arXiv.2510.00910},
-  url     = {https://arxiv.org/abs/2510.00910}
+  eprint  = {2510.00910},
+  archivePrefix = {arXiv},
+  primaryClass = {eess.IV},
+  doi     = {10.48550/arXiv.2510.00910}
 }
 ```
 
 ---
 
-## 📜 License
-
-This repository is released for **non-commercial** use.
-
-- **Code**: **PolyForm Noncommercial 1.0.0**  
-  You may use, modify, and share the code for **non-commercial** purposes.  
-  **Commercial use requires prior permission** from the authors.
-
-- **Non-code assets** (docs, figures): **CC BY-NC 4.0**  
-  You may share and adapt with attribution for **non-commercial** purposes.
-
-**Apply once (repo root):**
-
-1. Create `LICENSE` and paste the full text of **PolyForm Noncommercial 1.0.0**.  
-2. Create `LICENSE-NONCODE` with:
-
-```
-Docs & figures © 2025 Ali Shadman Yazdi et al. Licensed under CC BY-NC 4.0.  
-Full text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
-```
-
-3. (Optional) Add a contact for commercial licensing:
-
-```
-Commercial licensing: your.email@domain.tld
-```
+For questions or collaborations: contact [Ali Shadman](https://www.linkedin.com/in/alishadman/) or open an issue.
 
 ---
 
-## 🙏 Acknowledgements
-
-- FaceScape dataset authors and maintainers  
-- PyTorch and the open-source community
+🧠 Built with ❤️ for cranio-maxillofacial AI research
