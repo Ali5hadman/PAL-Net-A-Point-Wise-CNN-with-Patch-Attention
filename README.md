@@ -20,7 +20,7 @@ This repository provides the full pipeline for training and evaluating **PAL-Net
 - `run_facescape.py`: adapted version for FaceScape (neutral-only)
 - `src/`: dataset loaders, patch extraction, models, loss functions, utils
 
-You can plug in a **custom dataset loader** (e.g. your own `.npz` format) and modify `run.py` to use it.
+You can plug in a **custom dataset loader** and modify `run.py` to use it.
 
 ---
 
