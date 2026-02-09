@@ -136,6 +136,17 @@ For full license text: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc
 
 If you use this code or model, please cite:
 
+ @article{Yazdi_2026, 
+ title={PAL-Net: A point-wise CNN with patch-attention for 3D anatomical facial landmark localization}, 
+ volume={60}, ISSN={2352-9148}, 
+ url={http://dx.doi.org/10.1016/j.imu.2025.101729}, DOI={10.1016/j.imu.2025.101729}, 
+ journal={Informatics in Medicine Unlocked}, 
+ publisher={Elsevier BV}, 
+ author={Yazdi, Ali Shadman and Cappella, Annalisa and Baldini, Benedetta and Solazzo, Riccardo and Tartaglia, Gianluca and Sforza, Chiarella and Baselli, Giuseppe}, 
+ year={2026}, 
+ month=jan, 
+ pages={101729} }
+ 
 
 
 ---
