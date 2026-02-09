@@ -1,7 +1,8 @@
 # PAL-Net: A Point-Wise CNN with Patch-Attention for 3D Facial Landmark Localization
 
 [![arXiv](https://img.shields.io/badge/arXiv-2510.00910-b31b1b.svg)](https://arxiv.org/abs/2510.00910)
-[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.2510.00910-blue.svg)](https://doi.org/10.48550/arXiv.2510.00910)
+[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.2510.00910-blue.svg)]([https://doi.org/10.48550/arXiv.2510.00910](https://doi.org/10.1016/j.imu.2025.101729))
+[![Journal: Informatics in Medicine Unlocked](https://img.shields.io/badge/Journal-Informatics_in_Medicine_Unlocked-FF6C37?style=flat&logo=elsevier&logoColor=white)](https://doi.org/10.1016/j.imu.2025.101729)
 [![License: Non-Commercial](https://img.shields.io/badge/license-Noncommercial-lightgrey.svg)](#license)
 
 Code for the paper:
