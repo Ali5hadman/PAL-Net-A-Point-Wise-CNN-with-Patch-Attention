@@ -135,7 +135,7 @@ For full license text: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc
 ## 📚 Citation
 
 If you use this code or model, please cite:
-
+```
  @article{Yazdi_2026, 
  title={PAL-Net: A point-wise CNN with patch-attention for 3D anatomical facial landmark localization}, 
  volume={60}, ISSN={2352-9148}, 
@@ -147,7 +147,7 @@ If you use this code or model, please cite:
  month=jan, 
  pages={101729} }
  
-
+```
 
 ---
 
